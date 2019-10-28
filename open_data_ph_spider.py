@@ -43,7 +43,7 @@ class OpenDataPhSpider(Spider):
     def handle_dataset_page(self, response):
         soup = BeautifulSoup(response.body, 'lxml')
         # download all is not working so we'll use each file's download button instead
-        dlinks = [i.parent['href']for i in soup.find_all('i', attrs={'class': 'fa-download'})]
+        dlinks = [i.parent['href'] for i in soup.find_all('i', attrs={'class': 'fa-download'})]
 
         # download all link is at the last index
         for dlink in dlinks[:-1]:
