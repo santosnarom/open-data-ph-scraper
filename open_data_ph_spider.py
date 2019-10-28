@@ -19,6 +19,7 @@ class OpenDataPhSpider(Spider):
 
         super(OpenDataPhSpider, self).__init__(*args, **kwargs)
         params = {'q': 'search', 'query': keyword}
+        self.keyword = keyword
         self.search_url = '{}?{}'.format(self.base_url, urlencode(params))
 
     def start_requests(self):
@@ -26,12 +27,16 @@ class OpenDataPhSpider(Spider):
 
     def handle_search_response(self, response):
         soup = BeautifulSoup(response.body, 'lxml')
-        result_div = soup.find('div', attrs={'class': 'search-result-dataset'})
+        content_div = soup.find('div', attrs={'class': 'view-content'})
 
-        if result_div:
-            links = [header.a['href'] for header in result_div.find_all('h2')]
+        if content_div:
+            links = [header.a['href'] for header in content_div.find_all('h2')]
             for link in links:
                 yield response.follow(link, callback=self.handle_dataset_page)
+
+            next_page = soup.find('li', attrs={'class': 'pager-next'})
+            if next_page:
+                yield response.follow(next_page.a['href'], callback=self.handle_search_response)
         else:
             logging.warning('No results found for %s', self.keyword)
 
