@@ -1,3 +1,4 @@
+import os
 import logging
 from urllib.parse import urlencode
 
@@ -35,5 +36,19 @@ class OpenDataPhSpider(Spider):
             logging.warning('No results found for %s', self.keyword)
 
     def handle_dataset_page(self, response):
-        from scrapy.utils.response import open_in_browser; open_in_browser(response)
-        import pdb; pdb.set_trace()
+        soup = BeautifulSoup(response.body, 'lxml')
+        # download all is not working so we'll use each file's download button instead
+        dlinks = [i.parent['href']for i in soup.find_all('i', attrs={'class': 'fa-download'})]
+
+        # download all link is at the last index
+        for dlink in dlinks[:-1]:
+            yield response.follow(dlink, callback=self.save_file)
+
+    def save_file(self, response):
+        # save files to /tmp/opendataph for the meantime
+        path = '/tmp/opendataph/'
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        filename = response.url.rsplit('/', 1)[-1]
+        filepath = '{}{}'.format(path, filename)
+        with open(filepath, 'wb') as f:
+            f.write(response.body)
